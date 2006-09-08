@@ -1,0 +1,60 @@
+.\"
+.\" $Id: battmond.1 54 2006-09-08 13:12:05Z ntarmos $
+.\"
+.Dd June 6, 2006
+.Dt BATTMOND 1
+.Os
+.Sh NAME
+.Nm battmond
+.Nd monitor battery level on ACPI-enabled (laptop) computers
+.Sh SYNOPSIS
+.Nm battmond
+.Op Fl d Ar device
+.Op Fl i Ar interval
+.Op Fl W Ar warning
+.Op Fl H Ar halt
+.Op Fl h
+.Sh DESCRIPTION
+.Nm battmond
+monitors the battery level on your ACPI-enabled (laptop) computer.
+Battmond probes your battery level in predefined intervals. When the
+battery level is running low it writes a warning message to the syslog.
+On critical level, it powers the computer down. Both levels and the
+probe interval can be configured on the command line.
+.Pp
+.Nm battmond
+probes the battery level through the ACPIIO_BATT_GET_BATTINFO ioctl(2)
+on
+.Ar /dev/acpi Nd .
+.Nm -d
+option allows for defining a different device, although you shouldn't
+(probably) need it. Probes are performed in regular intervals of 10
+seconds. This value can be tweaked through the
+.Nm -i
+option. When the computer is on battery (i.e. there is a battery present
+and no power cord is connected),
+.Nm battmond
+checks the battery level against two values: the
+.Ar warning
+and the
+.Ar halt
+threshold. If the battery level goes below the former, a warning is sent
+to the syslog with a priority of LOG_ALERT. If it goes below the latter,
+.Nm battmond
+initiates a system shutdown, through a call to /sbin/halt. The warning
+and halt thresholds can be tuned using the
+.Nm -W
+and
+.Nm -H
+options respectively. Values are expressed in percentage of maximum
+charge, with default values being 10 (%) for the warning message and 5
+(%) for the system halt.
+Finally,
+.Nm -h
+prints a brief help message to the stderr and terminates the program.
+.Sh SEE ALSO
+.Xr acpi 1
+,
+.Xr ioctl 2
+.Sh AUTHOR
+Nikos Ntarmos <ntarmos@ceid.upatras.gr>
