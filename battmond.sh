@@ -12,7 +12,7 @@
 #
 
 battmond_enable=${battmond_enable-"NO"}
-battmond_flags=${battmond_falgs-""}
+battmond_flags=${battmond_flags-""}
 
 . /etc/rc.subr
 
