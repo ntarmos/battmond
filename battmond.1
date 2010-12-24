@@ -25,7 +25,7 @@ probe interval can be configured on the command line.
 .Nm battmond
 probes the battery level through the ACPIIO_BATT_GET_BATTINFO ioctl(2)
 on
-.Ar /dev/acpi Nd .
+.Ar /dev/acpi .
 .Nm -d
 option allows for defining a different device, although you shouldn't
 (probably) need it. Probes are performed in regular intervals of 10
@@ -53,8 +53,7 @@ Finally,
 .Nm -h
 prints a brief help message to the stderr and terminates the program.
 .Sh SEE ALSO
-.Xr acpi 1
-,
+.Xr acpi 1 ,
 .Xr ioctl 2
 .Sh AUTHOR
 Nikos Ntarmos <ntarmos@ceid.upatras.gr>

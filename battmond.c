@@ -154,20 +154,21 @@ int main(int argc, char ** argv)
 
 	pidfile_close(pfh);
 
-	int units = 5;
-	if (ioctl(acpifd, ACPIIO_BATT_GET_UNITS, &units) == -1) {
-		syslog(LOG_WARNING,
-				"Unable to retrieve battery count. Defaulting to probing approach...");
-	}
 
 	while (1) {
-		errno = 0;
+		int total_cap = 0;
+		int units;
+		int unit = 0;
+		int charging = 0;
+
 		if ((acpifd = open(acpidev, O_RDONLY)) == -1)
 			oops("Unable to open acpi device %s", acpidev);
 
-		int total_cap = 0;
-		int unit = 0;
-		int charging = 0;
+		if (ioctl(acpifd, ACPIIO_BATT_GET_UNITS, &units) == -1) {
+			syslog(LOG_WARNING,
+					"Unable to retrieve battery count. Defaulting to probing approach...");
+			units = 5;
+		}
 
 		for (unit = 0; unit < units; unit ++) {
 			bzero(&battio, sizeof(battio));
@@ -176,20 +177,19 @@ int main(int argc, char ** argv)
 				if (battio.battinfo.state != ACPI_BATT_STAT_NOT_PRESENT && 
 						battio.battinfo.cap != -1) {
 					total_cap += battio.battinfo.cap;
-					if (battio.battinfo.state & ACPI_BATT_STAT_CHARGING) {
+					if (!(battio.battinfo.state & ACPI_BATT_STAT_DISCHARG)) {
 						have_warned = 0;
 						charging = 1;
 					}
 				} else {
 					have_warned = 0;
 				}
-			} else {
-				break;
 			}
 		}
-		if (total_cap > 0 && !charging) {
+		if (!charging && total_cap > 0) {
 			if (total_cap <= halt) {
 				syslog(LOG_EMERG, BATT_HALT);
+				close(acpifd);
 				execl("/sbin/halt", "halt", "-p", NULL);
 				oops("execl");
 			}
