@@ -109,10 +109,12 @@ int main(int argc, char ** argv)
 		syslog(LOG_WARNING, "pidfile_open() failed: %m");
 	}
 
-	if( daemon(0, 0) < 0) {
+#ifndef DEBUG
+	if (daemon(0, 0) < 0) {
 		pidfile_remove(pfh);
 		oops ("Can't spawn daemon process. Bailing out...");
 	}
+#endif
 
 	if (pidfile_write(pfh) == -1) {
 		syslog(LOG_WARNING, "pidfile_write(): %m");
@@ -125,7 +127,7 @@ int main(int argc, char ** argv)
 		int total_cap = 0;
 		int units;
 		int unit = 0;
-		int charging = 0;
+		int num_discharging = 0, num_charging = 0;
 
 		if ((acpifd = open(acpidev, O_RDONLY)) == -1)
 			oops("Unable to open acpi device");
@@ -135,24 +137,41 @@ int main(int argc, char ** argv)
 					"Unable to retrieve battery count. Defaulting to probing approach...");
 			units = 5;
 		}
+#ifdef DEBUG
+		fprintf(stderr, "%d battery unit%s detected\n", units, (units > 1) ? "s" : "");
+#endif
 
 		for (unit = 0; unit < units; unit ++) {
 			bzero(&battio, sizeof(battio));
 			battio.unit = unit;
 			if (ioctl(acpifd, ACPIIO_BATT_GET_BATTINFO, &battio) != -1) {
+#ifdef DEBUG
+				fprintf(stderr, "Battery unit %d: ", unit);
+#endif
 				if (battio.battinfo.state != ACPI_BATT_STAT_NOT_PRESENT && 
 						battio.battinfo.cap != -1) {
+#ifdef DEBUG
+					fprintf(stderr, "present%s (%d%%)\n", (battio.battinfo.state & ACPI_BATT_STAT_DISCHARG) ? "/discharging" : "", battio.battinfo.cap);
+#endif
 					total_cap += battio.battinfo.cap;
-					if (!(battio.battinfo.state & ACPI_BATT_STAT_DISCHARG)) {
+					if ((battio.battinfo.state & ACPI_BATT_STAT_DISCHARG)) {
+						num_discharging++;
+					} else {
+						num_charging++;
 						have_warned = 0;
-						charging = 1;
 					}
 				} else {
+#ifdef DEBUG
+					fprintf(stderr, "not present\n");
+#endif
 					have_warned = 0;
 				}
 			}
 		}
-		if (!charging && total_cap > 0) {
+#ifdef DEBUG
+		fprintf(stderr, "Total battery capacity: %d%%\n", total_cap);
+#endif
+		if (num_discharging && !num_charging && total_cap > 0) {
 			if (total_cap <= halt) {
 				syslog(LOG_EMERG, BATT_HALT);
 				close(acpifd);
