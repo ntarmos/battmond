@@ -37,43 +37,9 @@ static int have_warned = 0;
 
 const char *pid_file = "/var/run/battmond.pid";
 
-void oops(char * str, ...)
+void oops(char * str)
 {
-	va_list ap;
-
-	char * err_str = NULL;
-	static const char * perr_glue = ": ";
-	static const char * perr_str = "%m";
-	int have_str = 0, have_glue = 0;
-
-	int err_str_len = 0;
-
-	if (str != NULL && str[0] != 0) {
-		err_str_len += strlen(str);
-		have_str = 1;
-	}
-
-	if (errno != 0) {
-		if (have_str == 1) {
-			err_str_len += strlen(perr_glue);
-			have_glue = 1;
-		}
-		err_str_len += strlen(perr_str);
-	}
-
-	err_str = (char*)malloc(err_str_len + 1);
-
-	if (have_str == 1)
-		strncpy(err_str, str, err_str_len);
-	if (have_glue)
-		strncat(err_str, perr_glue, err_str_len);
-	if (errno != 0)
-		strncat(err_str, perr_str, err_str_len);
-
-	va_start(ap, str);
-	vsyslog(LOG_ERR, str, ap); 
-	va_end(ap);
-
+	perror(str);
 	if (acpidev != NULL)
 		free(acpidev);
 	exit(errno);
@@ -162,7 +128,7 @@ int main(int argc, char ** argv)
 		int charging = 0;
 
 		if ((acpifd = open(acpidev, O_RDONLY)) == -1)
-			oops("Unable to open acpi device %s", acpidev);
+			oops("Unable to open acpi device");
 
 		if (ioctl(acpifd, ACPIIO_BATT_GET_UNITS, &units) == -1) {
 			syslog(LOG_WARNING,
