@@ -33,13 +33,25 @@ power cord or save any unsaved work and halt the system.\n"
 #define BATT_HALT "Your battery power is in critical level. \
 Your system will now halt to preserve any unsaved work.\n"
 
+#ifdef DEBUG
+#define logfunc fprintf
+#define logtgt stderr
+#else
+#define logfunc syslog
+#define logtgt LOG_ERR
+#endif
+
 static int have_warned = 0;
 
 const char *pid_file = "/var/run/battmond.pid";
 
 void oops(char * str)
 {
-	perror(str);
+	if (errno)
+		logfunc(logtgt, "%s: %s", str, strerror(errno));
+	else
+		logfunc(logtgt, "%s", str);
+
 	if (acpidev != NULL)
 		free(acpidev);
 	exit(errno);
@@ -81,12 +93,12 @@ int main(int argc, char ** argv)
 				break;
 			case 'W':
 				warn = atoi(optarg);
-				if (warn <= 0)
+				if (warn < 0)
 					oops("Error in warning threshold value");
 				break;
 			case 'H':
 				halt = atoi(optarg);
-				if (halt <= 0)
+				if (halt < 0)
 					oops("Error in halt threshold value");
 				break;
 			case 'h':
