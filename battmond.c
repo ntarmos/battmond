@@ -32,6 +32,8 @@ char * acpidev = NULL;
 power cord or save any unsaved work and halt the system.\n"
 #define BATT_HALT "Your battery power is in critical level. \
 Your system will now halt to preserve any unsaved work.\n"
+#define BATT_SUSP "Your battery power is in critical level. \
+Your system will now suspend to preserve any unsaved work.\n"
 
 #ifdef DEBUG
 #define logfunc fprintf
@@ -60,7 +62,7 @@ void oops(char * str)
 void _usage(char * argv0)
 {
 	errno = 0;
-	fprintf(stderr, "Usage: %s [-diWHh]\n", argv0);
+	fprintf(stderr, "Usage: %s [-pdiWHzh]\n", argv0);
 	exit(0);
 }
 
@@ -73,10 +75,11 @@ int main(int argc, char ** argv)
 	int interval = 10; // Check every 10 seconds.
 	int warn = 10; // Percentage of charge to emit a warning.
 	int halt = 5; // Percentage of charge to halt the system.
+	char dosuspend = 0;
 	pid_t otherpid;
 	struct pidfh *pfh = NULL;
 
-	while ((ch = getopt(argc, argv, "p:d:i:W:H:h")) != -1) {
+	while ((ch = getopt(argc, argv, "p:d:i:W:H:zh")) != -1) {
 		switch (ch) {
 			case 'p':
 				pid_file = optarg;
@@ -100,6 +103,9 @@ int main(int argc, char ** argv)
 				halt = atoi(optarg);
 				if (halt < 0)
 					oops("Error in halt threshold value");
+				break;
+			case 'z':
+				dosuspend = 1;
 				break;
 			case 'h':
 			default:
@@ -185,10 +191,17 @@ int main(int argc, char ** argv)
 #endif
 		if (num_discharging && !num_charging && total_cap > 0) {
 			if (total_cap <= halt) {
-				syslog(LOG_EMERG, BATT_HALT);
-				close(acpifd);
-				execl("/sbin/halt", "halt", "-p", NULL);
-				oops("execl");
+				if (dosuspend) { // Suspend
+					syslog(LOG_EMERG, BATT_SUSP);
+					close(acpifd);
+					execl("/usr/sbin/acpiconf", "acpiconf", "-s3", NULL);
+					oops("execl");
+				} else { // Halt
+					syslog(LOG_EMERG, BATT_HALT);
+					close(acpifd);
+					execl("/sbin/halt", "halt", "-p", NULL);
+					oops("execl");
+				}
 			}
 			else if (total_cap <= warn) {
 				if (!have_warned) {
