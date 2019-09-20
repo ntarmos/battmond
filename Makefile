@@ -1,7 +1,7 @@
 # Simple makefile for battmond.
 #
-# Author: Nikos Ntarmos <ntarmos@ceid.upatras.gr>
-# URL: http://ntarmos.dyndns.org/
+# Author: Nikos Ntarmos <ntarmos@gmail.com>
+# URL: https://github.com/ntarmos/battmond/
 #
 
 CC?= /usr/bin/gcc

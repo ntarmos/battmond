@@ -1,8 +1,8 @@
 /*
  * Battmond: A battery monitoring daemon.
  *
- * Author: Nikos Ntarmos <ntarmos@ceid.upatras.gr>
- * URL: http://ntarmos.dyndns.org/
+ * Author: Nikos Ntarmos <ntarmos@gmail.com>
+ * URL: https://github.com/ntarmos/battmond/
  *
  * $FreeBSD$
  * $Id: battmond.c 54 2006-09-08 13:12:05Z ntarmos $
